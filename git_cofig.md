@@ -72,3 +72,39 @@ git push -u origin main    # 如果你使用的是main分支
 **六、总结**
 
 以上就是在Linux服务器上创建本地仓库并将代码推送到GitHub的完整流程。希望这个文档能够帮助你更好地理解和操作这个过程。如果你遇到任何问题或需要进一步的帮助，请随时提问。
+
+
+
+
+
+###生成新的ssh key到本地，并添加到github上
+ssh-keygen -t rsa -b 4096 -C "1393770724@qq.com"
+
+#生成Readme
+echo "# scRNA-editing" >> README.md
+git init
+#添加文件到暂存区
+git add README.md
+##necessory
+git config --global user.name "Wqing35"
+#提交暂存区文件到本地仓库
+git commit -m "first commit"
+#指定github特定分支
+git branch -M main
+git remote add origin git@github.com:Wqing35/scRNA-editing.git
+#推送
+git push -u origin main
+#再次添加新文件
+git add new.file
+git commit -m "Add new file to repository"
+git push XXX
+
+#如果中途有报错，例如：
+# ! [rejected]        main -> main (non-fast-forward
+#将github上的内容pull到本地仓库
+git pull origin main
+#再次报错
+#fatal: refusing to merge unrelated histories
+#强行合并本地与远程仓库
+git pull origin main --allow-unrelated-histories
+#后续再次提交文件即可
