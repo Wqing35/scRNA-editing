@@ -26,7 +26,7 @@ era-fasp@fasp.sra.ebi.ac.uk:/vol1/fastq/SRR636/004/SRR6367154/SRR6367154_1.fastq
 #-i 免密下载的密钥文件
 
 #step4:批量下载
-#进入ENA数据库使用GSE号搜索后获得fastq的tsv文件
+#进入EBI数据库使用GSE号搜索后获得fastq的tsv文件
 #批量下载代码为：
 file='/disk1/wenqing/tmp_data/PFC_s2/all_fastq/undownload_read1.txt'
 
