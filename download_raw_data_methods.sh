@@ -37,3 +37,7 @@ do
         era-fasp@$id  .
 done
 
+#3.下载fastq.gz文件后，快速解压gz文件的方式
+unpigz -d SRRXXX_*.fastq.gz
+
+
