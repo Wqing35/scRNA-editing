@@ -108,3 +108,6 @@ git pull origin main
 #强行合并本地与远程仓库
 git pull origin main --allow-unrelated-histories
 #后续再次提交文件即可
+
+###结合cron自动更新本地仓库到github远程仓库
+git add -A; DATE=$(date "+%Y%m%d"); git commit -m $DATE --no-verify; git push
