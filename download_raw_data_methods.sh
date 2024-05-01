@@ -40,4 +40,11 @@ done
 #3.下载fastq.gz文件后，快速解压gz文件的方式
 unpigz -d SRRXXX_*.fastq.gz
 
+#4. 根据barcode将celltype fq提取出来
+
+#5. 所有样本的celltype fq分别输入sprint_main_hisat2.py
+
+#####注意：每个样本的大小在17-112G之间，上述所有处理步骤实现并行处理的方式为：
+#####将所有涉及到下载、解压、提取celltype fq、sprint的操作，输入样本都分为两份
+#####并尽可能提高每个步骤使用的线程数
 
