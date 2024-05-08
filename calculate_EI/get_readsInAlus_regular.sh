@@ -1,0 +1,1 @@
+bedtools intersect -wb -a regular_combined.zz.sorted.modified -b ~/tmp_data/Alu_seq/AsInAlus_modified.txt | awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$6"\t"$7"\t"$8"\t"$9"\t"$10"_"$11}' > regular_combined.zz.sorted.modified_InAlus
