@@ -126,7 +126,7 @@ def main():
             fa.close()
             fo.close()   
 
-            subprocess.Popen('bash '+'/disk1/wenqing/scRNA-editing/caculate_EI/get_resInAlus_'+element+'.sh',shell=True).wait()
+            subprocess.Popen('bash '+'/disk1/wenqing/scRNA-editing/calculate_EI/get_resInAlus_'+element+'.sh',shell=True).wait()
 
 
         fi=open('resInAluWithADDP_WizDepth')
@@ -190,7 +190,7 @@ def main():
             print 'Get reads in Alu:'
 
             #筛选位于Alu区域的reads
-            subprocess.Popen('bash '+'/disk1/wenqing/scRNA-editing/caculate_EI/get_readsInAlus_'+element+'.sh',shell=True).wait()
+            subprocess.Popen('bash '+'/disk1/wenqing/scRNA-editing/calculate_EI/get_readsInAlus_'+element+'.sh',shell=True).wait()
             #bedtools intersect -wb -a regular_all_combined.zz.sorted.modified -b ~/tmp_data/Alu_seq/AsInAlus_modified.txt | awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$6"\t"$7"\t"$11"_"$12}' > regular_all_combined.zz.sorted.modified_InAlus
 
 

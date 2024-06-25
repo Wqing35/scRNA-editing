@@ -117,7 +117,7 @@ def main():
             print 'Get reads in gene:'
 
             #筛选位于gene区域的reads
-            subprocess.Popen('bash '+'/disk1/wenqing/scRNA-editing/caculate_EI/get_readsInGene_'+element+'.sh',shell=True).wait()
+            subprocess.Popen('bash '+'/disk1/wenqing/scRNA-editing/calculate_EI/get_readsInGene_'+element+'.sh',shell=True).wait()
             #bedtools intersect -wb -a regular_all_combined.zz.sorted.modified -b ~/tmp_data/Alu_seq/AsInAlus_modified.txt | awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$6"\t"$7"\t"$11"_"$12}' > regular_all_combined.zz.sorted.modified_InAlus
 
 
@@ -192,7 +192,7 @@ def main():
             fo.close()
 
         ###########step5:获取AEI
-        print 'Get AEI:'
+        print 'Get GEI:'
 
         EI_out_dir=element+'_EI_inGene_over'+str(depth_index)+'.txt'
         gene_counts_in_dir=element+'_combined.zz.sorted.modified_InGene_trimmed_reads_OnlyAG'
@@ -233,7 +233,7 @@ def main():
     #dp_idx=[1]
     #for idx in dp_idx:
     idx=0
-    get_AEI('all','gene',idx)
+    get_AEI('regular','gene',idx)
     print 'done'
 
 main() 

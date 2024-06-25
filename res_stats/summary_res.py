@@ -44,13 +44,29 @@ def main():
         ###################
     
         fo.close()
-    """ summaryRES(bed_in_path="./tmp/hyper_mskAG_alu.res",txt_out_path="./hyperAG_alu_res.txt") 
-    summaryRES(bed_in_path="./tmp/hyper_mskTC_alu.res",txt_out_path="./hyperTC_alu_res.txt")   """
-    #summaryRES(bed_in_path="./tmp/regular.res",txt_out_path="./regular_res.txt")
-    summaryRES(bed_in_path="/local/wenqing/data/sc/test_data_GW16_1/SPRINT_identified_all.res",txt_out_path="./all_res.txt") 
-
-
-
     
+    #samples=["GW16_1_3","GW16_1_4","GW19_1_1","GW19_1_3","GW23_1_1","GW23_1_2","GW23_1_3","GW26_1_1","GW19_1_2"]
+    """ celltypes=['GABA','neuron','opc']
+    for ad in [7,8,9,10]:
+        for dp in [11,12,13,14,15,16,17,18,19,20]:
+            for celltype in celltypes:
+                bed_in_path='/disk1/wenqing/tmp_data/PFC_s2/all_analysis_result/res_stats/'+str(ad)+'_'+str(dp)+'_'+celltype+'_all.res.depth'
+                txt_out_path='/disk1/wenqing/tmp_data/PFC_s2/all_analysis_result/res_stats/result/'+str(ad)+'_'+str(dp)+'_'+celltype+'_all.res.txt'
+                if os.path.exists(bed_in_path)==False:
+                    next
+                else:
+                    summaryRES(bed_in_path,txt_out_path)  """
+    """ sample=['GW16_1_4','GW19_1_1','GW23_1_2','GW26_1_1']
+    celltypes=['GABAergic_neurons','Neurons','OPC']
+    for one_sample in sample:
+        for celltype in celltypes:
+            bed_in_path='/disk1/wenqing/tmp_data/PFC_s2/filter_snv_for_new_res/'+one_sample+'/'+celltype+'/regular.res.depth'
+            txt_out_path='/disk1/wenqing/tmp_data/PFC_s2/filter_snv_for_new_res/'+one_sample+'/'+celltype+'/regular.res.txt'
+            summaryRES(bed_in_path,txt_out_path) """
+    
+    for idx in range(1,51):
+        bed_in_path='/disk1/wenqing/tmp_data/PFC_s2/test_filter_in_snv_neuron/filter_idx'+str(idx)+'/regular.res.depth'
+        txt_out_path='/disk1/wenqing/tmp_data/PFC_s2/test_filter_in_snv_neuron/filter_idx'+str(idx)+'/regular.res.txt'
+        summaryRES(bed_in_path,txt_out_path)
 
 main()

@@ -1,0 +1,1 @@
+bedtools intersect -wo -a regular_combined.zz.sorted.modified -b lncRNA_intron_WzRes_onlyAG_ad.processed.srt.txt > regular_combined.zz.sorted.modified_lncRNA_intron
