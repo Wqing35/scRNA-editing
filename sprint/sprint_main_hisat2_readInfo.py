@@ -4,7 +4,8 @@
 import subprocess,os,sys
 import re
 from datetime import datetime
-
+from collections import Counter
+from collections import OrderedDict
 
 def main(): 
     #import subprocess,os,sys
@@ -275,7 +276,7 @@ def main():
     refgenome=sys.argv[all_argv[0]]
     output=sys.argv[all_argv[1]]+'/'
     #temp：output目录下结果文件目录
-    tmp=output+'/tmp/'
+    tmp=output
 
     #hisat2、samtools所在路径
     hisat2=sys.argv[all_argv[2]]
@@ -842,17 +843,25 @@ def main():
                 
                 if len(baseqlst)>0 and sum(baseqlst)/float(len(baseqlst)) >= limitbasequa: #and missnum <= mismatch_num(len(seq[7])):
                     for snv in truesnv:
+                        #snv：mismatch+flag+read_barcode
                         try:
-                            allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]][0]=allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]][0]+1
-                            if (len(bin(int(seq[1]))) > 5 and bin(int(seq[1]))[-5]=='1' and snv[2][-1] == '1' ) or ((len(bin(int(seq[1]))) < 5 or bin(int(seq[1]))[-5]=='0') and snv[2][-1] == '2' ):
-                                allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]][1]=allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]][1]+1
-                            elif (len(bin(int(seq[1]))) > 5 and bin(int(seq[1]))[-5]=='1' and snv[2][-1] == '2' ) or ((len(bin(int(seq[1]))) < 5 or bin(int(seq[1]))[-5]=='0') and snv[2][-1] == '1' ):
-                                allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]][2]=allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]][2]+1
+                            #allsnv换成以chr+mismatch类型+位点+read为index，其对应的该snv的数量为value的字典
+                            allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]+'\t'+add_line][0]=allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]+'\t'+add_line][0]+1
+                            if len(bin(int(seq[1]))) > 5 and bin(int(seq[1]))[-5]=='1':
+                                allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]+'\t'+add_line][1]=allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]+'\t'+add_line][1]+1
+                            elif len(bin(int(seq[1]))) < 5 or bin(int(seq[1]))[-len(bin(int(seq[1])))]=='0':
+                                allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]+'\t'+add_line][2]=allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]+'\t'+add_line][2]+1
                         except Exception, e:
-                            if (len(bin(int(seq[1]))) > 5 and bin(int(seq[1]))[-5]=='1' and snv[2][-1] == '1' ) or ((len(bin(int(seq[1]))) < 5 or bin(int(seq[1]))[-5]=='0') and snv[2][-1] == '2' ):
-                                allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]]=[1,1,0]
-                            elif (len(bin(int(seq[1]))) > 5 and bin(int(seq[1]))[-5]=='1' and snv[2][-1] == '2' ) or ((len(bin(int(seq[1]))) < 5 or bin(int(seq[1]))[-5]=='0') and snv[2][-1] == '1' ):
-                                allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]]=[1,0,1]
+                            if zz_in_dir==output+"/tmp/genome_all.zz.dedup":
+                                add_line=seq[8]
+                            else:
+                                add_line=seq[8].split("_|_")[0]
+                                #read_name_2=read_name_1.split('_')[2]
+                                #add_line=read_name_2
+                            if len(bin(int(seq[1]))) > 5 and bin(int(seq[1]))[-5]=='1':
+                                allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]+'\t'+add_line]=[1,1,0]
+                            elif len(bin(int(seq[1]))) < 5 or bin(int(seq[1]))[-5]=='0':
+                                allsnv[seq[0]+'\t'+snv[0].split(':')[0]+'\t'+snv[0].split(':')[1]+'\t'+add_line]=[1,0,1]
 
         snv_bed=[]
         for snv in allsnv:
@@ -865,9 +874,24 @@ def main():
                     else:
                         snv_bed.append([seq[0],int(seq[2]),seq[1],'.',allsnv[snv][0]])
 
+        snv_bed=[]
+        for snv in allsnv:
+            #print snv
+            seq=snv.split('\t')
+            #若某snv位点覆盖深度>0
+            if allsnv[snv][0]>=limitad:
+                    #决定该snv是位于正链或负链
+                    if allsnv[snv][1] > allsnv[snv][2]: 
+                        snv_bed.append([seq[0],int(seq[2]),seq[1],'+',allsnv[snv][0],seq[3]])
+                    elif allsnv[snv][2] > allsnv[snv][1]:
+                        snv_bed.append([seq[0],int(seq[2]),seq[1],'-',allsnv[snv][0],seq[3]])
+                    else:
+                        snv_bed.append([seq[0],int(seq[2]),seq[1],'.',allsnv[snv][0],seq[3]])
+
         snv_bed.sort()
         for one in snv_bed:
-            fo.write(one[0]+'\t'+str(one[1]-1)+'\t'+str(one[1])+'\t'+one[2]+'\t'+str(one[4])+'\t'+one[3]+'\n')
+            #one[0]:chr;one[1]:snv位点；one[2]:mismatch类型；one[3]:正义链or反义链；one[4]:snv数量；one[5]：read_barcode
+            fo.write(one[0]+'\t'+str(one[1]-1)+'\t'+str(one[1])+'\t'+one[2]+'\t'+str(one[4])+'\t'+one[3]+'\t'+one[5]+'\n')
         fi.close()
         fo.close()
 
@@ -1008,18 +1032,19 @@ def main():
         for line in fi:
             seq=line.rstrip().split('\t')
             try:
-                whole[seq[0]+':'+seq[2]+':'+seq[3]+':'+seq[5]] += int(seq[4])
+                whole[seq[0]+':'+seq[2]+':'+seq[3]+':'+seq[5]+':'+seq[6]] += int(seq[4])
             except Exception,e:
-                whole[seq[0]+':'+seq[2]+':'+seq[3]+':'+seq[5]] = int(seq[4])
+                whole[seq[0]+':'+seq[2]+':'+seq[3]+':'+seq[5]+':'+seq[6]] = int(seq[4])
 
         tmp=[]
         for one in whole:
             seq=one.split(':')
             dep=str(whole[one])
-            tmp.append([seq[0],int(seq[1]),seq[2],dep,seq[3]])
+            tmp.append([seq[0],int(seq[1]),seq[2],dep,seq[3],seq[4]])
         tmp.sort()
         for one in tmp:
-            fo.write(one[0]+'\t'+str(one[1]-1)+'\t'+str(one[1])+'\t'+one[2]+'\t'+one[3]+'\t'+one[4]+'\n')
+            print one
+            fo.write(one[0]+'\t'+str(one[1]-1)+'\t'+str(one[1])+'\t'+one[2]+'\t'+one[3]+'\t'+one[4]+'\t'+one[5]+'\n')
     
     def snv_or(bed_in_dir1,bed_in_dir2,bed_out_dir):
         f1=open(bed_in_dir1)
@@ -1028,17 +1053,17 @@ def main():
         whole={}
         for line in f1:
             seq=line.rstrip().split('\t')
-            whole[':'.join(seq[0:4])+':'+seq[5]]=int(seq[4])
+            whole[':'.join(seq[0:4])+':'+seq[5]+':'+seq[6]]=int(seq[4])
         for line in f2:
             seq=line.rstrip().split('\t')
-            if ':'.join(seq[0:4])+':'+seq[5] in whole:
-                whole[':'.join(seq[0:4])+':'+seq[5]] +=int(seq[4])
+            if ':'.join(seq[0:4])+':'+seq[5]+':'+seq[6] in whole:
+                whole[':'.join(seq[0:4])+':'+seq[5]+':'+seq[6]] +=int(seq[4])
             else:
-                whole[':'.join(seq[0:4])+':'+seq[5]]=int(seq[4])
+                whole[':'.join(seq[0:4])+':'+seq[5]+':'+seq[6]]=int(seq[4])
         lst=[]
         for one in whole:
             seq=one.split(':')
-            lst.append([seq[0],int(seq[1]),int(seq[2]),seq[3],str(whole[one]),seq[4]])
+            lst.append([seq[0],int(seq[1]),int(seq[2]),seq[3],str(whole[one]),seq[4],seq[5]])
         lst.sort()
         for one in lst:
             out=[]
@@ -1049,6 +1074,41 @@ def main():
         f1.close()
         f2.close()
         fo.close()
+
+    def filter_snv_depth(snv_in_dir,snv_out_dir,flag):
+        fi=open(snv_in_dir)
+        all_sites=[]
+        for line in fi:
+            seq=line.rstrip().split('\t')
+            site=seq[0]+':'+seq[1]+':'+seq[2]
+            all_sites.append(site)
+        fi.close()
+        #合并的snv深度超过阈值后，还是分开写以记录readInfo
+        fi=open(snv_in_dir)
+        uniq_site={}
+        for line in fi:
+            seq=line.split('\t')
+            site=seq[0]+':'+seq[1]+':'+seq[2]
+            other_info=':'.join(seq[3:-1])+':'+seq[-1]
+            try:
+                uniq_site[site].append(other_info)
+            except Exception,e:
+                uniq_site[site]=[other_info]
+        fi.close()
+
+        results=[]
+        counter = Counter(all_sites)
+        for snv,count in counter.items():
+            chr_site=snv.split(':')[0]
+            site_0=snv.split(':')[1]
+            site_1=snv.split(':')[2]
+            if count > int(flag):
+                for value in uniq_site[snv]:
+                    results.append("{}\t{}\t{}\t{}".format(chr_site, site_0, site_1, '\t'.join(value.rstrip().split(':'))))
+
+        sorted_results = sorted(results, key=lambda x: (x.split()[0], int(x.split()[1]), int(x.split()[2])))
+        with open(snv_out_dir, 'w') as fo:
+            fo.writelines([result + '\n' for result in sorted_results])
 
     #use .bed to annotate .bed
     def annotate(bed_in_dir=0,bed_anno_dir=0,bed_out_dir=0):
@@ -1125,50 +1185,90 @@ def main():
 
     def get_snv_with_ad(snv_in_dir=0,snv_out_dir=0,flag=0):
         fi=open(snv_in_dir)
-        fo=open(snv_out_dir,'w')
-        
+        all_sites=[]
+        for line in fi:
+            seq=line.rstrip().split('\t')
+            site=seq[0]+':'+seq[1]+':'+seq[2]
+            all_sites.append(site)
+        fi.close()
+
+        fi=open(snv_in_dir)
+        uniq_site={}
         for line in fi:
             seq=line.split('\t')
+            site=seq[0]+':'+seq[1]+':'+seq[2]
+            other_info=':'.join(seq[3:-1])+':'+seq[-1]
             try:
-                if int(seq[4])>=int(flag):
-                    fo.write(line)
-            except Exception, e:
-                print seq[0]+'\t'+seq[2]+"\twithout\tAD flag\n"		
-
-
-
+                uniq_site[site].append(other_info)
+            except Exception,e:
+                uniq_site[site]=[other_info]
         fi.close()
-        fo.close()
+
+        results=[]
+        counter = Counter(all_sites)
+        for snv,count in counter.items():
+            chr_site=snv.split(':')[0]
+            site_0=snv.split(':')[1]
+            site_1=snv.split(':')[2]
+            if count >= flag:
+                for value in uniq_site[snv]:
+                    results.append("{}\t{}\t{}\t{}".format(chr_site, site_0, site_1, '\t'.join(value.rstrip().split(':'))))
+        sorted_results = sorted(results, key=lambda x: (x.split()[0], int(x.split()[1]), int(x.split()[2])))
+
+        with open(snv_out_dir, 'w') as fo:
+            fo.writelines([result + '\n' for result in sorted_results])
 
     def snv_cluster(bed_in_dir=0,bed_out_dir=0,cluster_distance=-1,cluster_size=-1):
         fi=open(bed_in_dir)
-        fo=open(bed_out_dir,'w')
+        #先存储唯一的snv
+        #ordered_dict = OrderedDict()
+        uniq_site=OrderedDict()
+        for line in fi:
+            seq=line.split('\t')
+            site=seq[0]+':'+seq[1]+':'+seq[2]+':'+seq[3]
+            other_info=':'.join(seq[4:-1])+':'+seq[-1]
+            try:
+                uniq_site[site].append(other_info)
+            except Exception,e:
+                uniq_site[site]=[other_info]
+        fi.close()
+
+        sorted_keys = uniq_site.keys()
+
         tmp='chr0:0:AA'
         limitdistance=int(cluster_distance)
         limitnum=int(cluster_size)
-        lst=[]
-        for line in fi:
-                seq=line.split('\t')
+        lst=[] 
+        #符合结果的snv candidate放在res_lst[]中      
+        res_lst=[]
+        for one in sorted_keys:
+                seq=one.split(':')
                 tmpseq=tmp.split(':')
                 if seq[0]==tmpseq[0] and int(seq[2])-int(tmpseq[1])<=limitdistance and seq[3]==tmpseq[2]:
-                    lst.append(line)
+                    lst.append(one)
                 else:
                     if len(lst)>=limitnum:
-                            begin=float(lst[0].split('\t')[1])
-                            end=float(lst[-1].split('\t')[2])
+                            begin=float(lst[0].split(':')[1])
+                            end=float(lst[-1].split(':')[2])
                             density=len(lst)/(end-begin)
-                            for one in lst:
-                                fo.write(one[0:-1]+'\t'+str(len(lst))+'\t'+str(density)+'\n')
+                            for tmp_line in lst:
+                                for value in uniq_site[tmp_line]:
+                                    res_lst.append([tmp_line, value, str(len(lst)), str(density)])
                     lst=[]
-                    lst.append(line)
+                    lst.append(one)
                 tmp=seq[0]+':'+seq[2]+':'+seq[3]
         if len(lst)>=limitnum:
-                begin=float(lst[0].split('\t')[1])
-                end=float(lst[-1].split('\t')[2])
+                begin=float(lst[0].split(':')[1])
+                end=float(lst[-1].split(':')[2])
                 density=len(lst)/(end-begin)
-                for one in lst:
-                    fo.write(one[0:-1]+'\t'+str(len(lst))+'\t'+str(density)+'\n')
-        fi.close()
+                for tmp_line in lst:
+                    for value in uniq_site[tmp_line]:
+                        res_lst.append([tmp_line, value, str(len(lst)), str(density)])
+        
+        fo=open(bed_out_dir,'w')
+        for one in res_lst:
+            #print('\t'.join(one[0].split(':'))+'\t'+'\t'.join(one[1].rstrip().split(':'))+'\t'+one[2]+'\t'+one[3]+'\n')
+            fo.write('\t'.join(one[0].split(':'))+'\t'+'\t'.join(one[1].rstrip().split(':'))+'\t'+one[2]+'\t'+one[3]+'\n')
         fo.close()
 
     def bed_or(bed_in_dir1,bed_in_dir2,bed_out_dir):
@@ -1178,16 +1278,16 @@ def main():
         whole=[]
         for line in f1:
             seq=line.replace('\n','').split('\t')
-            whole.append([seq[0],int(seq[2]),seq[3],seq[4],seq[5]])
+            whole.append([seq[0],int(seq[2]),seq[3],seq[4],seq[5],seq[6]])
         for line in f2:
             seq=line.replace('\n','').split('\t')
-            whole.append([seq[0],int(seq[2]),seq[3],seq[4],seq[5]])
+            whole.append([seq[0],int(seq[2]),seq[3],seq[4],seq[5],seq[6]])
         whole.sort()
         old=set()
         for one in whole:
-            if one[0]+':'+str(one[1]) not in old:
-                fo.write(one[0]+'\t'+str(one[1]-1)+'\t'+str(one[1])+'\t'+one[2]+'\t'+one[3]+'\t'+one[4]+'\n')
-                old.add(one[0]+':'+str(one[1]))
+            if one[0]+':'+str(one[1])+':'+one[2]+':'+one[5] not in old:
+                fo.write(one[0]+'\t'+str(one[1]-1)+'\t'+str(one[1])+'\t'+one[2]+'\t'+one[3]+'\t'+one[4]+'\t'+one[5]+'\n')
+                old.add(one[0]+':'+str(one[1])+':'+one[2]+':'+one[5])
         f1.close()
         f2.close()
         fo.close()
@@ -1200,16 +1300,16 @@ def main():
         whole=[]
         for line in f1:
             seq=line.replace('\n','').split('\t')
-            whole.append([seq[0],int(seq[2]),seq[3],seq[4],seq[5]])
+            whole.append([seq[0],int(seq[2]),seq[3],seq[4],seq[5],seq[6]])
         for line in f2:
             seq=line.replace('\n','').split('\t')
-            whole.append([seq[0],int(seq[2]),seq[3],seq[4],seq[5]])
+            whole.append([seq[0],int(seq[2]),seq[3],seq[4],seq[5],seq[6]])
         for line in f3:
             seq=line.replace('\n','').split('\t')
-            whole.append([seq[0],int(seq[2]),seq[3],seq[4],seq[5]])
+            whole.append([seq[0],int(seq[2]),seq[3],seq[4],seq[5],seq[6]])
         whole.sort()
         for one in whole:
-            fo.write(one[0]+'\t'+str(one[1]-1)+'\t'+str(one[1])+'\t'+one[2]+'\t'+one[3]+'\t'+one[4]+'\n')
+            fo.write(one[0]+'\t'+str(one[1]-1)+'\t'+str(one[1])+'\t'+one[2]+'\t'+one[3]+'\t'+one[4]+'\t'+one[5]+'\n')
         f1.close()
         f2.close()
         f3.close()
@@ -1222,18 +1322,18 @@ def main():
         whole={}
         for line in f1:
             seq=line.rstrip().split('\t')
-            whole[':'.join(seq[0:4])+':'+seq[5]]=int(seq[4])
+            whole[':'.join(seq[0:4])+':'+seq[5]+':'+seq[6]]=int(seq[4])
         for line in f2:
             seq=line.rstrip().split('\t')
-            if ':'.join(seq[0:4])+':'+seq[5] in whole:
+            if ':'.join(seq[0:4])+':'+seq[5]+':'+seq[6] in whole:
                 pass
                 #whole[':'.join(seq[0:4])+':'+seq[5]] +=int(seq[4])
             else:
-                whole[':'.join(seq[0:4])+':'+seq[5]]=int(seq[4])
+                whole[':'.join(seq[0:4])+':'+seq[5]+':'+seq[6]]=int(seq[4])
         lst=[]
         for one in whole:
             seq=one.split(':')
-            lst.append([seq[0],int(seq[1]),int(seq[2]),seq[3],str(whole[one]),seq[4]])
+            lst.append([seq[0],int(seq[1]),int(seq[2]),seq[3],str(whole[one]),seq[4],seq[5]])
         lst.sort()
         for one in lst:
             out=[]
@@ -1244,6 +1344,32 @@ def main():
         f1.close()
         f2.close()
         fo.close()
+
+    def get_res_in_1cell(bed_in_dir, bed_out_dir):
+        all_sites = []
+        with open(bed_in_dir) as fi:
+            for line in fi:
+                seq = line.rstrip().split('\t')
+                site='_'.join(seq[0:4])
+                all_sites.append(site)
+
+        counter = Counter(all_sites)
+        results = []
+        for site, count in counter.items():
+            chr_site=site.split('_')[0]
+            site_0=site.split('_')[1]
+            site_1=site.split('_')[2]
+            type=site.split('_')[3]
+            strand='+'
+            if type[0] in ['A','G','C','T']:
+                results.append("{}\t{}\t{}\t{}\t{}\t{}".format(chr_site, site_0, site_1, type, count, strand))
+
+        # 对results列表进行排序
+        sorted_results = sorted(results, key=lambda x: (x.split()[0], int(x.split()[1]), int(x.split()[2])))
+
+        # 将排序后的结果写入输出文件
+        with open(bed_out_dir, 'w') as fo:
+            fo.writelines([result + '\n' for result in sorted_results])
 
     def o2b(bed_in,bed_out):
         fi=open(bed_in)
@@ -1332,7 +1458,7 @@ def main():
     #try:
     if 1==1: 
 
-        time1=datetime.now()
+        """ time1=datetime.now()
         #预处理阶段
         #seperate(tmp+'regular.snv.anno',tmp+'regular.snv.anno.alu',tmp+'regular.snv.anno.nalurp',tmp+'regular.snv.anno.nrp','Alu')
         print 'preprocessing...'
@@ -1507,51 +1633,51 @@ def main():
         if os.path.exists(tmp+'genome_mskTC_all.zz'):
                 os.remove(tmp+'genome_mskTC_all.zz')
         if os.path.exists(tmp+'genome_all.zz'):
-                os.remove(tmp+'genome_all.zz')
+                os.remove(tmp+'genome_all.zz')"""
 
         print 'identifying SNVs...'
    
         if os.path.exists(refgenome+'.trans.fa'):
             #筛选符合条件的snv
-            mask_zz2snv(tmp+'transcript_mskAG_all.zz.dedup',tmp+'transcript_mskAG_all.zz.dedup.snv',tmp+'baseq.cutoff') 
-            mask_zz2snv(tmp+'transcript_mskTC_all.zz.dedup',tmp+'transcript_mskTC_all.zz.dedup.snv',tmp+'baseq.cutoff') 
+            #mask_zz2snv(tmp+'transcript_mskAG_all.zz.dedup',tmp+'transcript_mskAG_all.zz.dedup.snv',tmp+'baseq.cutoff') 
+            #mask_zz2snv(tmp+'transcript_mskTC_all.zz.dedup',tmp+'transcript_mskTC_all.zz.dedup.snv',tmp+'baseq.cutoff') 
             mask_zz2snv(tmp+'transcript_all.zz.dedup',tmp+'transcript_all.zz.dedup.snv',tmp+'baseq.cutoff')
 
             #将候选snv在转录本模板的定位转换成基因组上的位置（用处？？？？？？？？）
-            tzz2gzz(refgenome+'.trans.fa.loc', tmp+'transcript_mskAG_all.zz.dedup', tmp+'transcript_mskAG_all.zz.dedup.genome.zz')
-            tzz2gzz(refgenome+'.trans.fa.loc', tmp+'transcript_mskTC_all.zz.dedup', tmp+'transcript_mskTC_all.zz.dedup.genome.zz')
+            #tzz2gzz(refgenome+'.trans.fa.loc', tmp+'transcript_mskAG_all.zz.dedup', tmp+'transcript_mskAG_all.zz.dedup.genome.zz')
+            #tzz2gzz(refgenome+'.trans.fa.loc', tmp+'transcript_mskTC_all.zz.dedup', tmp+'transcript_mskTC_all.zz.dedup.genome.zz')
             tzz2gzz(refgenome+'.trans.fa.loc', tmp+'transcript_all.zz.dedup', tmp+'transcript_all.zz.dedup.genome.zz')
              
         #根据前述决定的碱基质量阈值对snv进行筛选并去重
-        mask_zz2snv(tmp+'genome_mskAG_all.zz.dedup',tmp+'genome_mskAG_all.zz.dedup.snv',tmp+'baseq.cutoff') 
-        mask_zz2snv(tmp+'genome_mskTC_all.zz.dedup',tmp+'genome_mskTC_all.zz.dedup.snv',tmp+'baseq.cutoff') 
+        #mask_zz2snv(tmp+'genome_mskAG_all.zz.dedup',tmp+'genome_mskAG_all.zz.dedup.snv',tmp+'baseq.cutoff') 
+        #mask_zz2snv(tmp+'genome_mskTC_all.zz.dedup',tmp+'genome_mskTC_all.zz.dedup.snv',tmp+'baseq.cutoff') 
         mask_zz2snv(tmp+'genome_all.zz.dedup',tmp+'genome_all.zz.dedup.snv',tmp+'baseq.cutoff') 
         
         
         #将mapped reads与unmapped reads两条线找到的snv候选合并并排序——all_combined.zz.sorted
         #all_combined.zz.sorted用于后续计算找到的所有RES的深度
-        if os.path.exists(refgenome+'.trans.fa'):
+        """ if os.path.exists(refgenome+'.trans.fa'):
             subprocess.Popen('cat '+tmp+'/genome_mskAG_all.zz.dedup '+tmp+'/genome_mskTC_all.zz.dedup '+tmp+'/genome_all.zz.dedup '+tmp+'/transcript_mskAG_all.zz.dedup.genome.zz '+tmp+'/transcript_mskTC_all.zz.dedup.genome.zz '+tmp+'/transcript_all.zz.dedup.genome.zz '+' > '+tmp+'/all_combined.zz',shell=True).wait()
             sort_zz(tmp+'/all_combined.zz', tmp+'/all_combined.zz.sorted')
         else: 
             subprocess.Popen('cat '+tmp+'/genome_mskAG_all.zz.dedup '+tmp+'/genome_mskTC_all.zz.dedup '+tmp+'/genome_all.zz.dedup '+' > '+tmp+'/all_combined.zz',shell=True).wait()
-            sort_zz(tmp+'/all_combined.zz', tmp+'/all_combined.zz.sorted')
+            sort_zz(tmp+'/all_combined.zz', tmp+'/all_combined.zz.sorted') """
         
      
         if os.path.exists(refgenome+'.trans.fa'):
             #将snv在转录本模板的定位转换成基因组上的位置
-            transcript_locator(tmp+'transcript_mskAG_all.zz.dedup.snv',refgenome+'.trans.fa.loc', tmp+'transcript_mskAG_all.zz.dedup.snv.genome.snv')
-            transcript_locator(tmp+'transcript_mskTC_all.zz.dedup.snv',refgenome+'.trans.fa.loc', tmp+'transcript_mskTC_all.zz.dedup.snv.genome.snv')
+            #transcript_locator(tmp+'transcript_mskAG_all.zz.dedup.snv',refgenome+'.trans.fa.loc', tmp+'transcript_mskAG_all.zz.dedup.snv.genome.snv')
+            #transcript_locator(tmp+'transcript_mskTC_all.zz.dedup.snv',refgenome+'.trans.fa.loc', tmp+'transcript_mskTC_all.zz.dedup.snv.genome.snv')
             transcript_locator(tmp+'transcript_all.zz.dedup.snv',refgenome+'.trans.fa.loc', tmp+'transcript_all.zz.dedup.snv.genome.snv')
 
             transcript_sort(tmp+'transcript_all.zz.dedup.snv.genome.snv',tmp+'transcript_all.zz.dedup.snv.genome.snv.sort')
-            transcript_sort(tmp+'transcript_mskTC_all.zz.dedup.snv.genome.snv',tmp+'transcript_mskTC_all.zz.dedup.snv.genome.snv.sort')
-            transcript_sort(tmp+'transcript_mskAG_all.zz.dedup.snv.genome.snv',tmp+'transcript_mskAG_all.zz.dedup.snv.genome.snv.sort')
+            #transcript_sort(tmp+'transcript_mskTC_all.zz.dedup.snv.genome.snv',tmp+'transcript_mskTC_all.zz.dedup.snv.genome.snv.sort')
+            #transcript_sort(tmp+'transcript_mskAG_all.zz.dedup.snv.genome.snv',tmp+'transcript_mskAG_all.zz.dedup.snv.genome.snv.sort')
             
             #将mapped reads与unmapped reads两条线找到的snv合并
             snv_or(tmp+'transcript_all.zz.dedup.snv.genome.snv.sort',tmp+'genome_all.zz.dedup.snv',tmp+'regular.snv')
-            snv_or(tmp+'transcript_mskTC_all.zz.dedup.snv.genome.snv.sort',tmp+'genome_mskTC_all.zz.dedup.snv', tmp+'hyper_mskTC.snv')
-            snv_or(tmp+'transcript_mskAG_all.zz.dedup.snv.genome.snv.sort',tmp+'genome_mskAG_all.zz.dedup.snv', tmp+'hyper_mskAG.snv')
+            #snv_or(tmp+'transcript_mskTC_all.zz.dedup.snv.genome.snv.sort',tmp+'genome_mskTC_all.zz.dedup.snv', tmp+'hyper_mskTC.snv')
+            #snv_or(tmp+'transcript_mskAG_all.zz.dedup.snv.genome.snv.sort',tmp+'genome_mskAG_all.zz.dedup.snv', tmp+'hyper_mskAG.snv')
 
 
         else:
@@ -1566,13 +1692,15 @@ def main():
 
         #repeat：repeat file
         if repeat !=False:
-
+            filter_snv_depth(tmp+'regular.snv', tmp+'regular.snv_filterDepth_readInfo', 10)
             #根据repeat file对上述流程的snv进行注释，那些区域是重复等
-            annotate(tmp+'regular.snv',repeat,tmp+'regular.snv.anno')    
+            annotate(tmp+'regular.snv_filterDepth_readInfo',repeat,tmp+'regular.snv.anno')    
             #根据注释将snv分成3个部分
             seperate(tmp+'regular.snv.anno',tmp+'regular.snv.anno.alu',tmp+'regular.snv.anno.nalurp',tmp+'regular.snv.anno.nrp','Alu')
+            #合并相同的snv并根据flag过滤
             get_snv_with_ad(tmp+'regular.snv.anno.alu',tmp+'regular.snv.anno.alu.ad2',2)
             #筛选Alu snv的2条支线
+            #这一步和单细胞的snv cluster不同，不需要对细胞barcode做限制，但需要注意重复的snv不算做不同的res candidate
             snv_cluster(tmp+'regular.snv.anno.alu',tmp+'regular_alu.res.ad1', cluster_distance, cluster_size_alu_ad1)
             snv_cluster(tmp+'regular.snv.anno.alu.ad2',tmp+'regular_alu.res.ad2', cluster_distance, cluster_size_alu_ad2)
             bed_or(tmp+'regular_alu.res.ad1',tmp+'regular_alu.res.ad2',tmp+'regular_alu.res')
@@ -1589,10 +1717,11 @@ def main():
             combine_res(tmp+'regular.snv.anno.alu',tmp+'regular.snv.anno.nalurp',tmp+'regular.snv.anno.nrp',tmp+'regular.snv.anno.rmsrp')
             snv_cluster(tmp+'regular.snv.anno.rmsrp',tmp+'regular_overall.res', cluster_distance, cluster_size_regular_max)
             res_or(tmp+'regular_split.res',tmp+'regular_overall.res',tmp+'regular.res')
-    
+            #将相同的res合并，利于后续计算整体celltype中的ad和dp
+            get_res_in_1cell(tmp+'regular.res', tmp+'regular.res_2getDepth')
 
             #对hyper snv采取与regular snv同样的操作
-            annotate(tmp+'hyper_mskTC.snv',repeat,tmp+'hyper_mskTC.snv.anno')    
+            """ annotate(tmp+'hyper_mskTC.snv',repeat,tmp+'hyper_mskTC.snv.anno')    
             seperate(tmp+'hyper_mskTC.snv.anno',tmp+'hyper_mskTC.snv.anno.alu',tmp+'hyper_mskTC.snv.anno.nalurp',tmp+'hyper_mskTC.snv.anno.nrp','Alu')
             snv_cluster(tmp+'hyper_mskTC.snv.anno.alu',tmp+'hyper_mskTC_alu.res', cluster_distance, cluster_size_alu_hp)
             snv_cluster(tmp+'hyper_mskTC.snv.anno.nalurp',tmp+'hyper_mskTC_nalurp.res', cluster_distance, cluster_size_nalurp_hp)
@@ -1615,7 +1744,7 @@ def main():
             snv_cluster(tmp+'hyper_mskAG.snv.anno.rmsrp',tmp+'hyper_mskAG_overall.res', cluster_distance, cluster_size_hyper_max)
             res_or(tmp+'hyper_mskAG_split.res',tmp+'hyper_mskAG_overall.res',tmp+'hyper_mskAG.res')
 
-            snv_or(tmp+'hyper_mskTC.res',tmp+'hyper_mskAG.res',tmp+'hyper.res')
+            snv_or(tmp+'hyper_mskTC.res',tmp+'hyper_mskAG.res',tmp+'hyper.res') """
 
 
             
@@ -1648,11 +1777,11 @@ def main():
             snv_or(tmp+'SPRINT_identified_A_to_I_hyper.res',tmp+'SPRINT_identified_A_to_I_regular.res',output+'SPRINT_identified_A_to_I_all.res') 
         '''
 
-        # subprocess.Popen('cp '+tmp+'/regular.res '+output+'/SPRINT_identified_regular.res',shell=True).wait()
-        get_depth( tmp+'/all_combined.zz.sorted' , tmp+'/regular.res', tmp+'/regular.res.depth')
-        subprocess.Popen('echo "#Chrom\tStart(0base)\tEnd(1base)\tType\tSupporting_reads\tStrand\tAD:DP" | cat - '+tmp +'/regular.res.depth   > '+output+'/SPRINT_identified_regular.res',shell=True).wait()
-       # subprocess.Popen('cp '+tmp+'/hyper.res '+output+'/SPRINT_identified_hyper.res',shell=True).wait()
-        get_depth( tmp+'/all_combined.zz.sorted' , tmp+'/hyper.res', tmp+'/hyper.res.depth')
+        #subprocess.Popen('cp '+tmp+'/regular.res '+output+'/SPRINT_identified_regular.res',shell=True).wait()
+        get_depth( tmp+'/all_combined.zz.sorted' , tmp+'/regular.res_2getDepth', tmp+'/regular.res.depth')
+        #subprocess.Popen('echo "#Chrom\tStart(0base)\tEnd(1base)\tType\tSupporting_reads\tStrand\tAD:DP" | cat - '+tmp +'/regular.res.depth   > '+output+'/SPRINT_identified_regular.res',shell=True).wait()
+        #subprocess.Popen('cp '+tmp+'/hyper.res '+output+'/SPRINT_identified_hyper.res',shell=True).wait()
+        """ get_depth( tmp+'/all_combined.zz.sorted' , tmp+'/hyper.res', tmp+'/hyper.res.depth')
         subprocess.Popen('echo "#Chrom\tStart(0base)\tEnd(1base)\tType\tSupporting_reads\tStrand\tAD:DP" | cat - '+tmp +'/hyper.res.depth   > '+output+'/SPRINT_identified_hyper.res',shell=True).wait()
         subprocess.Popen('cp '+tmp+'/PARAMETER.txt '+output+'/PARAMETER.txt',shell=True).wait()
 
@@ -1673,7 +1802,7 @@ def main():
         print(align_process_time)
         print(whole_process_time)
         
-        sys.exit(0)
+        sys.exit(0) """
     try:
         pass
     except Exception,e:

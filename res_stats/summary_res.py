@@ -64,9 +64,18 @@ def main():
             txt_out_path='/disk1/wenqing/tmp_data/PFC_s2/filter_snv_for_new_res/'+one_sample+'/'+celltype+'/regular.res.txt'
             summaryRES(bed_in_path,txt_out_path) """
     
-    for idx in range(1,51):
-        bed_in_path='/disk1/wenqing/tmp_data/PFC_s2/test_filter_in_snv_neuron/filter_idx'+str(idx)+'/regular.res.depth'
-        txt_out_path='/disk1/wenqing/tmp_data/PFC_s2/test_filter_in_snv_neuron/filter_idx'+str(idx)+'/regular.res.txt'
-        summaryRES(bed_in_path,txt_out_path)
+    #for idx in range(1,51):
+    #    bed_in_path='/disk1/wenqing/tmp_data/PFC_s2/test_filter_in_snv_neuron/filter_idx'+str(idx)+'/regular.res.depth'
+    #    txt_out_path='/disk1/wenqing/tmp_data/PFC_s2/test_filter_in_snv_neuron/filter_idx'+str(idx)+'/regular.res.txt'
+    #    summaryRES(bed_in_path,txt_out_path)
+    sample=['GW08','GW12','GW16_1_3','GW16_1_9','GW19_1_1','GW19_1_2','GW19_1_3','GW23_1_1','GW23_1_2','GW23_1_3','GW26_1_1']
+    for one_sample in sample:
+        bed_in_path_readInfo='/disk1/wenqing/tmp_data/PFC_s2/result/'+one_sample+'/GABAergic_neurons/tmp/readInfo_dpFiltered/tmp/regular.res.depth'
+        txt_out_path_readInfo='/disk1/wenqing/tmp_data/PFC_s2/result/'+one_sample+'/GABAergic_neurons/tmp/readInfo_dpFiltered/tmp/regular.res.txt'
+        summaryRES(bed_in_path_readInfo,txt_out_path_readInfo)
+        
+        bed_in_path_bulk='/disk1/wenqing/tmp_data/PFC_s2/filter_snv_for_new_res/'+one_sample+'/GABAergic_neurons/regular.res.depth'
+        txt_out_path_bulk='/disk1/wenqing/tmp_data/PFC_s2/filter_snv_for_new_res/'+one_sample+'/GABAergic_neurons/regular.res.txt'        
+        summaryRES(bed_in_path_bulk,txt_out_path_bulk)
 
 main()

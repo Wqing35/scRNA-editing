@@ -52,23 +52,7 @@ def main():
     
         fo.close()
 
-    """ summaryRES(bed_in_path="./tmp/hyper_mskAG_alu.res",txt_out_path="./hyperAG_alu_res.txt") 
-    summaryRES(bed_in_path="./tmp/hyper_mskTC_alu.res",txt_out_path="./hyperTC_alu_res.txt")   """
-    sample=['20','32','56']
-    for phase in sample:
-        cell_types=["L2_3_ExN","L4","L5_6","L5_6_CC","IN_VIP","Olig"]
-        for type in cell_types:
-            res_in_dir='/disk1/wenqing/tmp_data/ASD/ctr_male_pfc/ctr_'+phase+'/regular_merged.res_over1_'+type
-            summaryRES(res_in_dir,res_in_dir+'.txt') 
-    """ summaryRES(bed_in_path="/disk1/wenqing/tmp_data/ASD/asd_male_pfc/asd_18/SPRINT_identified_all.res",txt_out_path="/disk1/wenqing/tmp_data/ASD/asd_male_pfc/asd_18/all.res.txt") 
-    summaryRES(bed_in_path="/disk1/wenqing/tmp_data/ASD/ctr_male_pfc/ctr_20/SPRINT_identified_all.res",txt_out_path="/disk1/wenqing/tmp_data/ASD/ctr_male_pfc/ctr_20/all.res.txt") 
-    summaryRES(bed_in_path="/disk1/wenqing/tmp_data/ASD/ctr_male_pfc/ctr_23/SPRINT_identified_all.res",txt_out_path="/disk1/wenqing/tmp_data/ASD/ctr_male_pfc/ctr_23/all.res.txt") 
-    summaryRES(bed_in_path="/disk1/wenqing/tmp_data/ASD/ctr_male_pfc/ctr_56/SPRINT_identified_all.res",txt_out_path="/disk1/wenqing/tmp_data/ASD/ctr_male_pfc/ctr_56/all.res.txt")  """
 
-    
-    """ summaryRES(bed_in_path="/disk1/wenqing/tmp_data/ASD/asd_male_pfc/asd_17/SPRINT_identified_all.res",txt_out_path="./all.res.txt") 
-    summaryRES(bed_in_path="/disk1/wenqing/tmp_data/ASD/asd_male_pfc/asd_17/SPRINT_identified_regular.res",txt_out_path="./regular.res.txt") 
-    summaryRES(bed_in_path="/disk1/wenqing/tmp_data/ASD/asd_male_pfc/asd_57/SPRINT_identified_all.res",txt_out_path="../asd_57/all.res.txt") 
-    summaryRES(bed_in_path="/disk1/wenqing/tmp_data/ASD/asd_male_pfc/asd_57/SPRINT_identified_regular.res",txt_out_path="../asd_57/regular.res.txt")  """
+    summaryRES(bed_in_path="/disk1/wenqing/tmp_data/PFC_s2/result/GW16_1_4_onecell/tmp/regular.res.depth",txt_out_path="./regular.res.txt")  
 
 main()

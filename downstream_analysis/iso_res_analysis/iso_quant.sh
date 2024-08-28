@@ -82,6 +82,7 @@ multipleFieldSelection.py \
 -i  GW*/quant.sf -k 1 -f 4 \
 -o iso_tpm_untrimmed_ver.txt
 
+#将转录本id作为行名,转录本id有重复
 perl -alne '{/(\|.*\|)\t/; ;s/$1//g;s/\|//g;print}' iso_tpm_untrimmed_ver.txt > iso_tpm_formatted_untrimmed_ver.txt
 
 

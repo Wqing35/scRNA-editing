@@ -27,7 +27,7 @@ def extract_reads(barcode_file, read1_file, read2_file, output_read1, output_rea
         #read2_seq = read2_seq.strip()  
         if read2_seq[:8] in barcodes:  
             # 提取 read1 的对应读段    
-            output_read1_handle.write(read1_header)  
+            output_read1_handle.write(read1_header+'_'+read2_seq[:8])  
             output_read1_handle.write(read1_seq)  
             output_read1_handle.write(read1_plus)  
             output_read1_handle.write(read1_qual)  
